@@ -6,7 +6,8 @@ import org.apache.log4j.Logger;
 
 /**
  * Responsible for handling response received from the backend and deliver it
- * upto the listening ioReactor level.
+ * to the listening ioReactor. This correlates the response channel
+ * associated with each request.
  * 
  * @author ravindra
  *
@@ -37,13 +38,11 @@ public class RspHandler {
 			}
 		}
 
-		System.out.println(new String(this.rsp));
+		LOGGER.info(new String(rsp));
+
 		// Sending the response back to the caller.
-
-		LOGGER.info("Writing the response back to the client.");
+		LOGGER.info("Writing the response back to the caller.");
 		listeningIOReactor.send(responseChannel, rsp);
-
-		// listeningIOReactor.send(responseChannel, rsp);
 
 	}
 }

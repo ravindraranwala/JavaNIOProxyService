@@ -25,7 +25,7 @@ import org.apache.log4j.Logger;
 /**
  * Defines the <code>ioReactor</code> which listens to the incoming client
  * connections and sends the requests to the connecting ioReactor. Also this
- * reactor is responsible for writing the response back to the sender.
+ * reactor is responsible for writing the response back to the caller/client.
  * 
  * @author ravindra
  *
@@ -129,6 +129,7 @@ public class ListeningIOReactor implements Runnable {
 	}
 
 	private void write(SelectionKey key) throws IOException {
+		LOGGER.info("Writing the response back to the client.");
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		synchronized (pendingData) {
 			List<ByteBuffer> queue = pendingData.get(socketChannel);
@@ -156,6 +157,7 @@ public class ListeningIOReactor implements Runnable {
 	}
 
 	private void read(SelectionKey key) throws IOException {
+		LOGGER.info("Reading data from the client.");
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 
 		// Clear out our read buffer so it's ready for new data
@@ -187,6 +189,7 @@ public class ListeningIOReactor implements Runnable {
 	}
 
 	private void accept(SelectionKey key) throws IOException {
+		LOGGER.info("Establishing a Connection between the Client and the Proxy service.");
 		ServerSocketChannel serverSocketChannel = (ServerSocketChannel) key.channel();
 		// Accept the connection and make it non-blocking
 		SocketChannel socketChannel = serverSocketChannel.accept();
@@ -207,8 +210,7 @@ public class ListeningIOReactor implements Runnable {
 			final String remoteHost = prop.getProperty("remoteHost");
 
 			Worker worker =
-			                new Worker(
-			                           new ConnectingIOReactor(InetAddress.getByName(remoteHost),
+			                new Worker(new ConnectingIOReactor(InetAddress.getByName(remoteHost),
 			                                                   remotePort));
 			new Thread(worker).start();
 

@@ -2,6 +2,12 @@ package org.wso2.nio;
 
 import java.nio.channels.SocketChannel;
 
+/**
+ * Represents a Client request arrives at the Listening IOReactor level.
+ * 
+ * @author ravindra
+ *
+ */
 public class ServerDataEvent {
 	public ListeningIOReactor server;
 	public SocketChannel socket;

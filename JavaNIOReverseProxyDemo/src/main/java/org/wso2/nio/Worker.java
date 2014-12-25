@@ -9,8 +9,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 /**
- * Worker thread which handles client requests at the Listening ioReactor level.
- * Also this is responsible for sending response back to the sender/client.
+ * Worker thread which processes client requests at the Listening ioReactor
+ * level.
  * 
  * @author ravindra
  *
@@ -30,18 +30,13 @@ public class Worker implements Runnable {
 	}
 
 	public void processData(ListeningIOReactor server, SocketChannel socket, byte[] data, int count) {
-		if (new String(data).contains("response") || new String(data).contains("fault")) {
-			byte[] dataCopy = new byte[count];
-			System.arraycopy(data, 0, dataCopy, 0, count);
-			synchronized (queue) {
-				queue.add(new ServerDataEvent(server, socket, dataCopy));
-				queue.notify();
-			}
-
-		} else {
-			sendRequestToBackend(data, socket, server);
+		LOGGER.info("Request Processing ...");
+		byte[] dataCopy = new byte[count];
+		System.arraycopy(data, 0, dataCopy, 0, count);
+		synchronized (queue) {
+			queue.add(new ServerDataEvent(server, socket, dataCopy));
+			queue.notify();
 		}
-
 	}
 
 	public void run() {
@@ -60,8 +55,11 @@ public class Worker implements Runnable {
 			}
 
 			// Return to sender
-			LOGGER.info("Returning the response back to the client.");
-			dataEvent.server.send(dataEvent.socket, dataEvent.data);
+			// LOGGER.info("Returning the response back to the client.");
+			// dataEvent.server.send(dataEvent.socket, dataEvent.data);
+
+			// Send the request data to the connecting ioReactor.
+			sendRequestToBackend(dataEvent.data, dataEvent.socket, dataEvent.server);
 		}
 
 	}
@@ -70,13 +68,7 @@ public class Worker implements Runnable {
 	                                  final ListeningIOReactor listeningIOReactor) {
 
 		try {
-			LOGGER.info("Sending the request to the backend.");
-
-			// TODO: Try to use singleton pattern here and check why you are
-			// getting hang after few requests in that case.
-			// ConnectingIOReactor client =
-			// new ConnectingIOReactor(InetAddress.getByName(remoteHost),
-			// remotePort);
+			LOGGER.info("Sending the request to the Connecting side of the Proxy service.");
 
 			RspHandler handler = new RspHandler(socket, listeningIOReactor);
 			client.send(data, handler);

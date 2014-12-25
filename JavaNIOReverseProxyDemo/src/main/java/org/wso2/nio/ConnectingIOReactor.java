@@ -3,7 +3,6 @@ package org.wso2.nio;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -20,8 +19,8 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 /**
- * Receives the connection requests and sends it to the back end service. Then
- * gets the response and send it back all the way.
+ * Receives the connection requests and writes it to the back end service. Then
+ * reads the response and send it back to the caller.
  * 
  * @author ravindra
  *
@@ -115,6 +114,7 @@ public class ConnectingIOReactor implements Runnable {
 	}
 
 	private void read(SelectionKey key) throws IOException {
+		LOGGER.info("Reading the response from the backend.");
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 
 		// Clear out our read buffer so it's ready for new data
@@ -125,6 +125,7 @@ public class ConnectingIOReactor implements Runnable {
 		try {
 			numRead = socketChannel.read(this.readBuffer);
 		} catch (IOException e) {
+			LOGGER.error("ERROR while reading the response from the backend", e);
 			// The remote forcibly closed the connection, cancel
 			// the selection key and close the channel.
 			key.cancel();
@@ -133,6 +134,7 @@ public class ConnectingIOReactor implements Runnable {
 		}
 
 		if (numRead == -1) {
+			LOGGER.info("Backend service closes the connection gracefully.");
 			// Remote entity shut the socket down cleanly. Do the
 			// same from our end and cancel the channel.
 			key.channel().close();
@@ -164,6 +166,7 @@ public class ConnectingIOReactor implements Runnable {
 	}
 
 	private void write(SelectionKey key) throws IOException {
+		LOGGER.info("Writing the data from the Proxy service to the Backend.");
 		SocketChannel socketChannel = (SocketChannel) key.channel();
 		synchronized (pendingData) {
 			List<ByteBuffer> queue = pendingData.get(socketChannel);
@@ -237,6 +240,8 @@ public class ConnectingIOReactor implements Runnable {
 		try {
 			socketChannel.finishConnect();
 		} catch (IOException e) {
+			LOGGER.error("An Exception was thrown while establishing a connection between the proxy service and the backend.",
+			             e);
 			// Cancel the channel's registration with our selector
 			key.cancel();
 			return;
@@ -246,28 +251,4 @@ public class ConnectingIOReactor implements Runnable {
 		key.interestOps(SelectionKey.OP_WRITE);
 	}
 
-	private static ConnectingIOReactor getInstance(final String host, final int port)
-	                                                                                 throws UnknownHostException,
-	                                                                                 IOException {
-		if (connectingIOReactor == null) {
-			connectingIOReactor = new ConnectingIOReactor(InetAddress.getByName(host), port);
-		}
-
-		return connectingIOReactor;
-	}
-
-	// public static void main(String[] args) {
-	// try {
-	// NioClient client = new NioClient(InetAddress.getByName("localhost"),
-	// 9090);
-	// Thread t = new Thread(client);
-	// t.setDaemon(true);
-	// t.start();
-	// RspHandler handler = new RspHandler();
-	// client.send("Hello World".getBytes(), handler);
-	// handler.waitForResponse();
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// }
-	// }
 }
