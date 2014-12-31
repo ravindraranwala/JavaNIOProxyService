@@ -48,8 +48,6 @@ public class ConnectingIOReactor implements Runnable {
 	private Map<SocketChannel, RspHandler> rspHandlers =
 	                                                     Collections.synchronizedMap(new HashMap<SocketChannel, RspHandler>());
 
-	private static ConnectingIOReactor connectingIOReactor = null;
-
 	ConnectingIOReactor(InetAddress hostAddress, int port) throws IOException {
 		this.hostAddress = hostAddress;
 		this.port = port;
